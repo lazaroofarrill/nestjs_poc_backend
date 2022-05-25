@@ -1,9 +1,16 @@
-import { Column, Entity, JoinTable, ManyToMany } from 'typeorm'
+import { Column, Entity, Index, JoinTable, ManyToMany } from 'typeorm'
 import { DefaultEntity } from '../../../common/database/entities/DefaultEntity'
 
 @Entity()
+@Index(['email'], { where: 'deleted_at is null', unique: true })
 export class Profile extends DefaultEntity {
   @Column()
+  email: string
+
+  @Column()
+  password: string
+
+  @Column({ nullable: true })
   img: string
 
   @Column()
@@ -12,7 +19,7 @@ export class Profile extends DefaultEntity {
   @Column()
   lastName: string
 
-  @Column()
+  @Column({ nullable: true })
   phone: string
 
   @Column()
@@ -27,7 +34,7 @@ export class Profile extends DefaultEntity {
   @Column()
   zipcode: string
 
-  @Column()
+  @Column({ default: true })
   available: boolean
 
   @ManyToMany(() => Profile)

@@ -1,78 +1,102 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
-import { profilesDb } from './db/profilesDb'
-import { friendsDb } from './db/friendsDb'
+import { ProfileRepository } from './repos/profile.repository'
 import { Profile } from './entities/profile.entity'
 
 @Injectable()
 export class ProfileService {
+  constructor(private readonly repo: ProfileRepository) {}
+
   create(createProfileDto: CreateProfileDto) {
-    const id = profilesDb.length + 1
-    return profilesDb.push(Object.assign(createProfileDto, { id }))
+    return this.repo.save(createProfileDto)
   }
 
   findAll() {
-    return profilesDb
+    return this.repo.find()
   }
 
-  findOne(id: number) {
-    return profilesDb.find((p) => p.id = id)
-  }
-
-  update(id: number, updateProfileDto: UpdateProfileDto) {
-    const eIdx = profilesDb.findIndex((p) => p.id = id)
-    if (eIdx !== -1) {
-      profilesDb[eIdx] = Object.assign({}, profilesDb[eIdx], updateProfileDto)
-      return profilesDb[eIdx]
+  async findOne(id: string) {
+    const profile = await this.repo.findOne({ id })
+    if (!profile) {
+      throw new NotFoundException('Profile not found')
     }
-    throw new NotFoundException()
+    return profile
   }
 
-  remove(id: number) {
-    const eIdx = profilesDb.findIndex((p) => p.id = id)
-    if (eIdx !== -1) {
-      return profilesDb.splice(eIdx, 1)
-
+  async update(id: string, updateProfileDto: UpdateProfileDto) {
+    const existing = await this.findOne(id)
+    if (!existing) {
+      throw new NotFoundException('User not found')
     }
-    throw new NotFoundException()
+    return await this.repo.save(
+      Object.assign({}, existing, updateProfileDto, { id: id }),
+    )
   }
 
-  getFriends(id: number): Profile[] {
-    return friendsDb.filter((f) => f.f1_id === id)
-      .map((f) => profilesDb.find((p) => p.id === f.f2_id))
-  }
-
-  addFriend(id1: number, id2: number) {
-    const tuple = friendsDb.find(f => f.f1_id === id1 && f.f2_id === id2)
-    if (!tuple) {
-      friendsDb.push({
-        f1_id: id1,
-        f2_id: id2,
-      })
-      return true
+  async remove(id: string) {
+    const existing = await this.findOne(id)
+    if (!existing) {
+      throw new NotFoundException('User not found')
     }
-    throw new BadRequestException()
+    return await this.repo.softRemove({
+      id: id,
+    })
   }
 
-  getPath(start: number, end: number) {
+  async getFriends(id: string): Promise<Profile[]> {
+    const existing = await this.repo.findOne({
+      where: {
+        id: id,
+      },
+      relations: ['Friends'],
+    })
+    if (!existing) {
+      throw new NotFoundException('User not found')
+    }
+    return existing.Friends
+  }
+
+  async addFriend(id1: string, id2: string) {
+    const friendList = await this.getFriends(id1)
+    if (friendList.map((f) => f.id).includes(id2)) {
+      throw new BadRequestException('friendship exists already.')
+    }
+    const newFriend = await this.findOne(id2)
+    return this.update(id1, { Friends: friendList.concat(newFriend) })
+  }
+
+  async mutualFriendShip(id1: string, id2: string) {
+    return Promise.all([this.addFriend(id1, id2), this.addFriend(id2, id1)])
+  }
+
+  async getPath(start: string, end: string): Promise<string[] | boolean> {
     const visited = [start]
     const gf = this.getFriends
-    const traversed = friendsTraverse(start, end, [start])
+    const traversed = await friendsTraverse(start, end, [start])
     if (traversed === false) throw new NotFoundException('No relation found')
     return traversed
 
-    function friendsTraverse(root: number, goal: number, path: number[] = []) {
-      const friends = gf(root).map(f => f.id).filter(id => !visited.includes(id))
+    async function friendsTraverse(
+      root: string,
+      goal: string,
+      path: string[] = [],
+    ) {
+      const friends = (await gf(root))
+        .map((f) => f.id)
+        .filter((id) => !visited.includes(id))
       for (const friend of friends) {
         const currPath = path.concat(friend)
         if (friend === goal) return currPath
-        const traversal = friendsTraverse(friend, goal, currPath)
+        const traversal = await friendsTraverse(friend, goal, currPath)
         if (traversal !== false) {
           return traversal
         }
       }
-
       return false
     }
   }

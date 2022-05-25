@@ -1,0 +1,69 @@
+GET {{host}}/profile
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile
+Content-Type: application/json
+
+{
+
+}
+
+###
+POST {{host}}/profile/1/friends/add/2
+
+###
+POST {{host}}/profile/1/friends/add/3
+
+###
+POST {{host}}/profile/3/friends/add/4
+
+###
+POST {{host}}/profile/4/friends/add/5
+
+
+###
+GET {{host}}/profile/1/friends
+
+###
+GET {{host}}/profile/distance/1/5
+

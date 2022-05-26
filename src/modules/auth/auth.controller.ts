@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { HashPasswordPipe } from '../../common/pipes/hash-password.pipe'
 import { CreateProfileDto } from '../profile/dto/create-profile.dto'
+import { LocalAuthGuard } from './guards/local-auth.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -9,9 +10,12 @@ export class AuthController {
 
   @Post('/sign-up')
   signUp(@Body(HashPasswordPipe) createProfileDto: CreateProfileDto) {
-    return 'ok'
+    return this.service.signUp(createProfileDto)
   }
 
-  @Get('login')
-  login() {}
+  @Post('login')
+  @UseGuards(LocalAuthGuard)
+  login(@Req() req) {
+    return this.service.login(req.user.id)
+  }
 }

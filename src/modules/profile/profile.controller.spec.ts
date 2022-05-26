@@ -8,8 +8,15 @@ describe('ProfileController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProfileController],
-      providers: [ProfileService],
-    }).compile()
+    })
+      .useMocker((token) => {
+        if (token === ProfileService) {
+          return {
+            findAll: jest.fn().mockResolvedValue([]),
+          }
+        }
+      })
+      .compile()
 
     controller = module.get<ProfileController>(ProfileController)
   })

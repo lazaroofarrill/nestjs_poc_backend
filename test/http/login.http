@@ -1,0 +1,23 @@
+POST http://localhost:5000/auth/login
+Content-Type: application/json
+
+{
+  "username": "agathe.schnoor@example.com",
+  "password": "slick"
+}
+
+###
+POST {{host}}/auth/sign-up
+Content-Type: application/json
+
+{
+  "firstName": "Agathe",
+  "lastName": "Schnoor",
+  "email": "agathe.schnoor@example.com",
+  "password": "slick",
+  "city": "Zwönitz",
+  "state": "Brandenburg",
+  "zipcode": "28531",
+  "address": "3984 Feldstraße",
+  "img": "https://randomuser.me/api/portraits/thumb/women/13.jpg"
+}

@@ -1,11 +1,12 @@
 GET {{host}}/profile
 
+
+
 ###
 POST {{host}}/profile
 Content-Type: application/json
 
 {
-  "email": "profile1"
 }
 
 ###
@@ -13,7 +14,6 @@ POST {{host}}/profile
 Content-Type: application/json
 
 {
-
 }
 
 ###
@@ -21,7 +21,6 @@ POST {{host}}/profile
 Content-Type: application/json
 
 {
-
 }
 
 ###
@@ -29,7 +28,6 @@ POST {{host}}/profile
 Content-Type: application/json
 
 {
-
 }
 
 ###
@@ -37,15 +35,6 @@ POST {{host}}/profile
 Content-Type: application/json
 
 {
-
-}
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-
 }
 
 ###

@@ -19,6 +19,7 @@ export class CreateProfileDto implements DeepPartial<Profile> {
   lastName: string
 
   @IsPhoneNumber()
+  @IsOptional()
   phone: string
 
   @IsString()

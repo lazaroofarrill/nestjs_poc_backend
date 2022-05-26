@@ -8,10 +8,11 @@ import { UpdateProfileDto } from './dto/update-profile.dto'
 import { ProfileRepository } from './repos/profile.repository'
 import { Profile } from './entities/profile.entity'
 import { Transactional } from 'typeorm-transactional-cls-hooked'
+import { FindManyOptions } from 'typeorm'
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly repo: ProfileRepository) {}
+  constructor(public readonly repo: ProfileRepository) {}
 
   @Transactional()
   create(createProfileDto: CreateProfileDto) {
@@ -19,8 +20,8 @@ export class ProfileService {
   }
 
   @Transactional()
-  findAll() {
-    return this.repo.find()
+  findAll(options?: FindManyOptions) {
+    return this.repo.find(options)
   }
 
   @Transactional()

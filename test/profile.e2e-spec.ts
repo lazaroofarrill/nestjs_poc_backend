@@ -7,6 +7,7 @@ import { Profile } from '../src/modules/profile/entities/profile.entity'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 import * as request from 'supertest'
 import { DeepPartial } from 'typeorm'
+import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked'
 
 describe('Profile E2E Testing', () => {
   let app: INestApplication
@@ -32,6 +33,7 @@ describe('Profile E2E Testing', () => {
         }),
       ],
     }).compile()
+    initializeTransactionalContext()
     app = module.createNestApplication()
     await app.init()
 

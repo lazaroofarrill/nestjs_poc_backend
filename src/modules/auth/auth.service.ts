@@ -4,7 +4,7 @@ import { CreateProfileDto } from '../profile/dto/create-profile.dto'
 
 @Injectable()
 export class AuthService {
-  constructor(readonly profileService: ProfileService) {}
+  constructor(private readonly profileService: ProfileService) {}
 
   signUp(createProfileDto: CreateProfileDto) {}
 

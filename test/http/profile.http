@@ -5,7 +5,7 @@ POST {{host}}/profile
 Content-Type: application/json
 
 {
-
+  "email": "profile1"
 }
 
 ###

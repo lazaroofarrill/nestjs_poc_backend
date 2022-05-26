@@ -4,19 +4,21 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common'
 import { ProfileService } from './profile.service'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
+import { HashPasswordPipe } from '../../common/pipes/hash-password.pipe'
 
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Post()
-  create(@Body() createProfileDto: CreateProfileDto) {
+  create(@Body(HashPasswordPipe) createProfileDto: CreateProfileDto) {
     return this.profileService.create(createProfileDto)
   }
 
@@ -36,7 +38,10 @@ export class ProfileController {
   }
 
   @Get('distance/:start/:end')
-  getPath(@Param('start') start: string, @Param('end') end: string) {
+  getPath(
+    @Param('start', ParseUUIDPipe) start: string,
+    @Param('end', ParseUUIDPipe) end: string,
+  ) {
     return this.profileService.getPath(start, end)
   }
 
@@ -51,14 +56,17 @@ export class ProfileController {
   }
 
   @Post(':id/friends/add/:newFriend')
-  addFriend(@Param('id') id: string, @Param('newFriend') newFriend: string) {
+  addFriend(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('newFriend') newFriend: string,
+  ) {
     return this.profileService.addFriend(id, newFriend)
   }
 
   @Post('/friends/connect/:friend1/:friend2')
   addMutualFriendship(
-    @Param('friend1') friend1: string,
-    @Param('friend2') friend2: string,
+    @Param('friend1', ParseUUIDPipe) friend1: string,
+    @Param('friend2', ParseUUIDPipe) friend2: string,
   ) {
     return this.profileService.mutualFriendShip(friend1, friend2)
   }

@@ -8,5 +8,6 @@ import { ProfileRepository } from './repos/profile.repository'
   imports: [TypeOrmModule.forFeature([ProfileRepository])],
   controllers: [ProfileController],
   providers: [ProfileService],
+  exports: [ProfileService],
 })
 export class ProfileModule {}

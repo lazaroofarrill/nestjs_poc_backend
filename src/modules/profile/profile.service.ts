@@ -7,19 +7,23 @@ import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { ProfileRepository } from './repos/profile.repository'
 import { Profile } from './entities/profile.entity'
+import { Transactional } from 'typeorm-transactional-cls-hooked'
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly repo: ProfileRepository) {}
 
+  @Transactional()
   create(createProfileDto: CreateProfileDto) {
     return this.repo.save(createProfileDto)
   }
 
+  @Transactional()
   findAll() {
     return this.repo.find()
   }
 
+  @Transactional()
   async findOne(id: string) {
     const profile = await this.repo.findOne({ id })
     if (!profile) {
@@ -28,6 +32,7 @@ export class ProfileService {
     return profile
   }
 
+  @Transactional()
   async update(id: string, updateProfileDto: UpdateProfileDto) {
     const existing = await this.findOne(id)
     if (!existing) {
@@ -38,6 +43,7 @@ export class ProfileService {
     )
   }
 
+  @Transactional()
   async remove(id: string) {
     const existing = await this.findOne(id)
     if (!existing) {
@@ -48,6 +54,7 @@ export class ProfileService {
     })
   }
 
+  @Transactional()
   async getFriends(id: string): Promise<Profile[]> {
     const existing = await this.repo.findOne({
       where: {
@@ -61,6 +68,7 @@ export class ProfileService {
     return existing.Friends
   }
 
+  @Transactional()
   async addFriend(id1: string, id2: string) {
     const friendList = await this.getFriends(id1)
     if (friendList.map((f) => f.id).includes(id2)) {
@@ -70,34 +78,41 @@ export class ProfileService {
     return this.update(id1, { Friends: friendList.concat(newFriend) })
   }
 
+  @Transactional()
   async mutualFriendShip(id1: string, id2: string) {
     return Promise.all([this.addFriend(id1, id2), this.addFriend(id2, id1)])
   }
 
+  @Transactional()
   async getPath(start: string, end: string): Promise<string[] | boolean> {
-    const visited = [start]
-    const gf = this.getFriends
-    const traversed = await friendsTraverse(start, end, [start])
+    const traversed = await this.friendsTraverse(start, end, [start], [start])
     if (traversed === false) throw new NotFoundException('No relation found')
     return traversed
+  }
 
-    async function friendsTraverse(
-      root: string,
-      goal: string,
-      path: string[] = [],
-    ) {
-      const friends = (await gf(root))
-        .map((f) => f.id)
-        .filter((id) => !visited.includes(id))
-      for (const friend of friends) {
-        const currPath = path.concat(friend)
-        if (friend === goal) return currPath
-        const traversal = await friendsTraverse(friend, goal, currPath)
-        if (traversal !== false) {
-          return traversal
-        }
+  @Transactional()
+  async friendsTraverse(
+    root: string,
+    goal: string,
+    path: string[] = [],
+    visited: string[],
+  ) {
+    const friends = (await this.getFriends(root))
+      .map((f) => f.id)
+      .filter((id) => !visited.includes(id))
+    for (const friend of friends) {
+      const currPath = path.concat(friend)
+      if (friend === goal) return currPath
+      const traversal = await this.friendsTraverse(
+        friend,
+        goal,
+        currPath,
+        visited,
+      )
+      if (traversal !== false) {
+        return traversal
       }
-      return false
     }
+    return false
   }
 }

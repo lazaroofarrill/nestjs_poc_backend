@@ -54,4 +54,12 @@ export class ProfileController {
   addFriend(@Param('id') id: string, @Param('newFriend') newFriend: string) {
     return this.profileService.addFriend(id, newFriend)
   }
+
+  @Post('/friends/connect/:friend1/:friend2')
+  addMutualFriendship(
+    @Param('friend1') friend1: string,
+    @Param('friend2') friend2: string,
+  ) {
+    return this.profileService.mutualFriendShip(friend1, friend2)
+  }
 }

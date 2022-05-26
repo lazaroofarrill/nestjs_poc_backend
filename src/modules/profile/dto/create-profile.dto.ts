@@ -1,6 +1,14 @@
 import { DeepPartial } from 'typeorm'
 import { Profile } from '../entities/profile.entity'
-import { IsBoolean, IsOptional, IsPhoneNumber, IsString } from 'class-validator'
+import {
+  Allow,
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+} from 'class-validator'
+import { Role } from '../constants/role'
 
 export class CreateProfileDto implements DeepPartial<Profile> {
   @IsString()
@@ -38,5 +46,10 @@ export class CreateProfileDto implements DeepPartial<Profile> {
   @IsOptional()
   available: boolean
 
+  @IsEnum(Role, { each: true })
+  @IsOptional()
+  roles: Role[]
+
+  @Allow()
   Friends: DeepPartial<Profile>[]
 }

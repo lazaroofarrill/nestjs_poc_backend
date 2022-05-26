@@ -1,13 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
+import { ProfileService } from '../profile/profile.service'
+import { ProfileRepository } from '../profile/repos/profile.repository'
 
 describe('AuthService', () => {
   let service: AuthService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
-    }).compile()
+      providers: [AuthService, ProfileService],
+    })
+      .useMocker((token) => {
+        if (token === ProfileRepository) {
+          return {}
+        }
+      })
+      .compile()
 
     service = module.get<AuthService>(AuthService)
   })

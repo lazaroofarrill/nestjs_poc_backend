@@ -2,17 +2,29 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ProfileService } from '../profile/profile.service'
 import { CreateProfileDto } from '../profile/dto/create-profile.dto'
 import * as bcrypt from 'bcrypt'
+import { Profile } from '../profile/entities/profile.entity'
+import { JwtService } from '@nestjs/jwt'
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   signUp(createProfileDto: CreateProfileDto) {
-    return this.profileService.create(createProfileDto)
+    return this.profileService.create(createProfileDto, req)
   }
 
-  login(userId: string) {
-    return this.profileService.findOne(userId)
+  login(user: Profile) {
+    const { email, id } = user
+    const payload = {
+      sub: id,
+      email,
+    }
+    return {
+      access_token: this.jwtService.sign(payload),
+    }
   }
 
   async checkUser(username: string, password: string) {

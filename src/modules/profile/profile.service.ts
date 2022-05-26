@@ -92,7 +92,7 @@ export class ProfileService {
   }
 
   @Transactional()
-  async friendsTraverse(
+  private async friendsTraverse(
     root: string,
     goal: string,
     path: string[] = [],

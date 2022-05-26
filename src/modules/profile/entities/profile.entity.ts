@@ -1,5 +1,6 @@
 import { Column, Entity, Index, JoinTable, ManyToMany } from 'typeorm'
 import { DefaultEntity } from '../../../common/database/entities/DefaultEntity'
+import { Role } from '../constants/role'
 
 @Entity()
 @Index(['email'], { where: 'deleted_at is null', unique: true })
@@ -40,4 +41,7 @@ export class Profile extends DefaultEntity {
   @ManyToMany(() => Profile)
   @JoinTable()
   Friends: Profile[]
+
+  @Column('enum', { array: true, enum: Role, default: [Role.USER] })
+  roles: Role[]
 }

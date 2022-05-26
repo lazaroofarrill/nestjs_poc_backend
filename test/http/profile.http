@@ -1,58 +1,28 @@
+###
+#@name login to app
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "agathe.schnoor@example.com",
+  "password": "slick"
+}
+
+> {%
+client.test('login success', () => {
+  client.assert(response.status === 201, 'error loging in')
+})
+ client.global.set('auth_token', response.body.access_token)
+ %}
+
+###
+#@name list profiles
 GET {{host}}/profile
+Authorization: Bearer {{auth_token}}
 
-
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-}
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-}
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-}
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-}
-
-###
-POST {{host}}/profile
-Content-Type: application/json
-
-{
-}
-
-###
-POST {{host}}/profile/1/friends/add/2
-
-###
-POST {{host}}/profile/1/friends/add/3
-
-###
-POST {{host}}/profile/3/friends/add/4
-
-###
-POST {{host}}/profile/4/friends/add/5
-
-
-###
-GET {{host}}/profile/1/friends
-
-###
-GET {{host}}/profile/distance/1/5
+> {%
+client.test('success getting profiles', () => {
+  client.assert(response.status === 200, 'error getting profiels')
+})
+ %}
 

@@ -18,7 +18,7 @@ import { HashPasswordPipe } from '../../common/pipes/hash-password.pipe'
 import { GenericRequest } from '../../common/types/genericRequest'
 import { Role } from './constants/role'
 import { RolesGuard } from '../auth/guards/roles.guard'
-import { ValidateRolePipe } from '../../common/pipes/validate-role.pipe'
+import { FilterRolePipe } from '../../common/pipes/filter-role.pipe'
 import {
   ApiBearerAuth,
   ApiBody,
@@ -40,7 +40,7 @@ export class ProfileController {
   @ApiBearerAuth()
   @UseGuards(new RolesGuard(Role.ADMIN))
   async create(
-    @Body(ValidateRolePipe, HashPasswordPipe)
+    @Body(FilterRolePipe, HashPasswordPipe)
     createProfileDto: CreateProfileDto,
   ): Promise<Profile> {
     return this.profileService.create(createProfileDto)
@@ -100,6 +100,7 @@ export class ProfileController {
 
   @Patch(':id')
   @ApiBody({ type: CreateProfileDto })
+  @ApiOperation({ summary: "Edit profile's info" })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @ApiResponse({ status: 401, description: 'User not logged in' })
   @ApiResponse({
@@ -108,7 +109,7 @@ export class ProfileController {
   })
   update(
     @Param('id') id: string,
-    @Body(ValidateRolePipe, HashPasswordPipe)
+    @Body(FilterRolePipe, HashPasswordPipe)
     updateProfileDto: UpdateProfileDto,
     @Req() req: GenericRequest,
   ) {
@@ -119,6 +120,7 @@ export class ProfileController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete profile' })
   remove(@Param('id') id: string, @Req() req: GenericRequest) {
     if (req.user.roles.includes(Role.ADMIN) || id === req.user.userId) {
       return this.profileService.remove(id)

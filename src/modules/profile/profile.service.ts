@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { ProfileRepository } from './repos/profile.repository'
@@ -34,14 +30,17 @@ export class ProfileService {
   }
 
   @Transactional()
-  async update(id: string, updateProfileDto: UpdateProfileDto) {
+  async update(
+    id: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<Profile[]> {
     const existing = await this.findOne(id)
     if (!existing) {
       throw new NotFoundException('User not found')
     }
-    return await this.repo.save(
+    return (await this.repo.save(
       Object.assign({}, existing, updateProfileDto, { id: id }),
-    )
+    )) as unknown as Profile[]
   }
 
   @Transactional()
@@ -73,10 +72,10 @@ export class ProfileService {
   async addFriend(id1: string, id2: string) {
     const friendList = await this.getFriends(id1)
     if (friendList.map((f) => f.id).includes(id2)) {
-      throw new BadRequestException('friendship exists already.')
+      return
     }
     const newFriend = await this.findOne(id2)
-    return this.update(id1, { Friends: friendList.concat(newFriend) })
+    await this.update(id1, { Friends: friendList.concat(newFriend) })
   }
 
   @Transactional()

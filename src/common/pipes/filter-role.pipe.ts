@@ -12,7 +12,7 @@ import { ProfileService } from '../../modules/profile/profile.service'
 import { UpdateProfileDto } from '../../modules/profile/dto/update-profile.dto'
 
 @Injectable()
-export class ValidateRolePipe implements PipeTransform {
+export class FilterRolePipe implements PipeTransform {
   constructor(
     @Inject(REQUEST) private req: GenericRequest,
     private profileService: ProfileService,

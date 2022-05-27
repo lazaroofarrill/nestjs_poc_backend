@@ -4,7 +4,9 @@ import { HashPasswordPipe } from '../../common/pipes/hash-password.pipe'
 import { CreateProfileDto } from '../profile/dto/create-profile.dto'
 import { LocalAuthGuard } from './guards/local-auth.guard'
 import { Public } from './decorators/public.decorator'
-import { ValidateRolePipe } from '../../common/pipes/validate-role.pipe'
+import { FilterRolePipe } from '../../common/pipes/filter-role.pipe'
+import { ApiBody, ApiOperation } from '@nestjs/swagger'
+import { LoginPayload } from './types/loginPayload'
 
 @Controller('auth')
 export class AuthController {
@@ -12,14 +14,17 @@ export class AuthController {
 
   @Public()
   @Post('/sign-up')
+  @ApiOperation({ summary: 'Create new user.' })
   async signUp(
-    @Body(ValidateRolePipe, HashPasswordPipe)
+    @Body(FilterRolePipe, HashPasswordPipe)
     createProfileDto: CreateProfileDto,
   ) {
     return this.service.signUp(createProfileDto)
   }
 
   @Public()
+  @ApiOperation({ summary: 'Authenticate user.' })
+  @ApiBody({ type: LoginPayload })
   @Post('login')
   @UseGuards(LocalAuthGuard)
   login(@Req() req) {

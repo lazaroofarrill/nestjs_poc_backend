@@ -68,7 +68,7 @@ describe('Profile Module Elevated', () => {
       .agent(app.getHttpServer())
       .post('/auth/login')
       .send({
-        username: 'ramoncito3312@gmail.com',
+        email: 'ramoncito3312@gmail.com',
         password: 'romn',
       })
     expect(body.access_token).toBeDefined()

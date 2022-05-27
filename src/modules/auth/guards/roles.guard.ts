@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { Role } from '../../profile/constants/role'
 
@@ -7,6 +12,7 @@ export class RolesGuard implements CanActivate {
   constructor(...allowedRoles: Role[]) {
     this.allowedRoles = allowedRoles
   }
+
   private readonly allowedRoles
 
   canActivate(
@@ -17,6 +23,8 @@ export class RolesGuard implements CanActivate {
       if (userRoles.includes(r)) return true
     }
 
-    return false
+    throw new ForbiddenException(
+      `Only users with ${this.allowedRoles} roles are allowed`,
+    )
   }
 }

@@ -57,14 +57,23 @@ export class ProfileController {
   }
 
   @Get(':id/friends')
-  findAllFriends(@Param('id') id: string, @Req() req: GenericRequest) {
-    if (req.user.userId) {
+  async findAllFriends(@Param('id') id: string, @Req() req: GenericRequest) {
+    if (
+      req.user.roles.includes(Role.ADMIN) ||
+      (await this.profileService.getFriends(req.user.userId))
+        .map((f) => f.id)
+        .includes(id)
+    ) {
+      return this.profileService.getFriends(id)
     }
 
-    return this.profileService.getFriends(id)
+    throw new ForbiddenException(
+      "You can't list friends of people you are not friends with",
+    )
   }
 
   @Get('distance/:start/:end')
+  @UseGuards(new RolesGuard(Role.ADMIN))
   getPath(
     @Param('start', ParseUUIDPipe) start: string,
     @Param('end', ParseUUIDPipe) end: string,
@@ -73,24 +82,39 @@ export class ProfileController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.update(id, updateProfileDto)
+  update(
+    @Param('id') id: string,
+    @Body() updateProfileDto: UpdateProfileDto,
+    @Req() req: GenericRequest,
+  ) {
+    if (req.user.roles.includes(Role.ADMIN) || id === req.user.userId) {
+      return this.profileService.update(id, updateProfileDto)
+    }
+    throw new ForbiddenException("You cannot update this profile's information")
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.profileService.remove(id)
+  remove(@Param('id') id: string, @Req() req: GenericRequest) {
+    if (req.user.roles.includes(Role.ADMIN) || id === req.user.userId) {
+      return this.profileService.remove(id)
+    }
+    throw new ForbiddenException('You cannot delete this profile')
   }
 
   @Post(':id/friends/add/:newFriend')
   addFriend(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('newFriend') newFriend: string,
+    @Req() req: GenericRequest,
   ) {
-    return this.profileService.addFriend(id, newFriend)
+    if (req.user.roles.includes(Role.ADMIN) || id === req.user.userId) {
+      return this.profileService.addFriend(id, newFriend)
+    }
+    throw new ForbiddenException("You can't add friends to other profiles")
   }
 
   @Post('/friends/connect/:friend1/:friend2')
+  @UseGuards(new RolesGuard(Role.ADMIN))
   addMutualFriendship(
     @Param('friend1', ParseUUIDPipe) friend1: string,
     @Param('friend2', ParseUUIDPipe) friend2: string,

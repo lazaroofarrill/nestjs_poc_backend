@@ -20,7 +20,9 @@ if (isNaN(friendsTotal)) {
 }
 
 if (friendsTotal > profilesTotal * (profilesTotal - 1)) {
-  throw Error("It's impossible to build a graph with the supplied values")
+  throw Error(
+    "It's impossible to build a graph with the supplied values friendsTotal can't be greater than profilesTotal*(profilesTotal-1)",
+  )
 }
 
 async function seed() {
@@ -35,32 +37,38 @@ async function seed() {
       const profileRepo = manager.getRepository(Profile)
 
       const createdProfiles = await profileRepo.save(newProfiles)
+      const possibleFriendships = []
+      for (let i = 0; i < profilesTotal; i++) {
+        for (let j = i + 1; j < profilesTotal; j++) {
+          possibleFriendships.push([i, j])
+          possibleFriendships.push([j, i])
+        }
+      }
       const friendShips = []
       for (let i = 0; i < friendsTotal; i++) {
-        const newFriendsShip = [
-          randomInt(0, createdProfiles.length - 1),
-          randomInt(0, createdProfiles.length - 1),
-        ]
-        if (
-          newFriendsShip[0] === newFriendsShip[1] ||
-          friendShips.find(
-            (fsp) =>
-              fsp[0] === newFriendsShip[0] && fsp[1] === newFriendsShip[1],
-          ) !== undefined
-        ) {
-          i--
+        if (possibleFriendships.length === 1) {
+          friendShips.push(possibleFriendships[0])
+          possibleFriendships.shift()
         } else {
-          friendShips.push(newFriendsShip)
+          const select = randomInt(0, possibleFriendships.length - 1)
+          friendShips.push(possibleFriendships[select])
+          possibleFriendships.splice(select, 1)
         }
       }
 
       await manager.query(
         `INSERT INTO profile_friends_profile (profile_id_1, profile_id_2)
          VALUES ${friendShips
-           .map(
-             (f) =>
-               `('${createdProfiles[f[0]].id}', '${createdProfiles[f[1]].id}')`,
-           )
+           .map((f) => {
+             try {
+               return `('${createdProfiles[f[0]].id}', '${
+                 createdProfiles[f[1]].id
+               }')`
+             } catch (e) {
+               console.log(f)
+               throw Error(e)
+             }
+           })
            .join(',')}`,
       )
     })

@@ -18,6 +18,8 @@ import { HashPasswordPipe } from '../../common/pipes/hash-password.pipe'
 import { GenericRequest } from '../../common/types/genericRequest'
 import { Role } from './constants/role'
 import { RolesGuard } from '../auth/guards/roles.guard'
+import { ValidateRolePipe } from '../../common/pipes/validate-role.pipe'
+import { Hash } from 'crypto'
 
 @Controller('profile')
 export class ProfileController {
@@ -26,16 +28,9 @@ export class ProfileController {
   @Post()
   @UseGuards(new RolesGuard(Role.ADMIN))
   async create(
-    @Body(HashPasswordPipe) createProfileDto: CreateProfileDto,
-    @Req() req: GenericRequest,
+    @Body(ValidateRolePipe, HashPasswordPipe)
+    createProfileDto: CreateProfileDto,
   ) {
-    const user = await this.profileService.findOne(req.user.userId)
-    if (
-      createProfileDto.roles.includes(Role.ADMIN) &&
-      !user.roles.includes(Role.ADMIN)
-    ) {
-      throw new ForbiddenException('This user is not allowed to create admins')
-    }
     return this.profileService.create(createProfileDto)
   }
 
@@ -84,7 +79,8 @@ export class ProfileController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateProfileDto: UpdateProfileDto,
+    @Body(ValidateRolePipe, HashPasswordPipe)
+    updateProfileDto: UpdateProfileDto,
     @Req() req: GenericRequest,
   ) {
     if (req.user.roles.includes(Role.ADMIN) || id === req.user.userId) {

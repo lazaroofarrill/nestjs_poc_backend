@@ -13,7 +13,7 @@ export class AuthService {
   ) {}
 
   signUp(createProfileDto: CreateProfileDto) {
-    return this.profileService.create(createProfileDto, req)
+    return this.profileService.create(createProfileDto)
   }
 
   login(user: Profile) {
@@ -22,8 +22,11 @@ export class AuthService {
       sub: id,
       email,
     }
+
+    const token = this.jwtService.sign(payload)
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: token,
     }
   }
 

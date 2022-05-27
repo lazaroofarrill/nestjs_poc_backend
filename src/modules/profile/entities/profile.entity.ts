@@ -40,8 +40,8 @@ export class Profile extends DefaultEntity {
 
   @ManyToMany(() => Profile)
   @JoinTable()
-  Friends: Profile[]
+  Friends?: Profile[]
 
   @Column('enum', { array: true, enum: Role, default: [Role.USER] })
-  roles: Role[]
+  roles?: Role[]
 }

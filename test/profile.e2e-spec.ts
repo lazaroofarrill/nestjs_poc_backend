@@ -8,10 +8,30 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 import * as request from 'supertest'
 import { DeepPartial } from 'typeorm'
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked'
+import { JwtGuard } from '../src/modules/auth/guards/jwt.guard'
+import { APP_GUARD } from '@nestjs/core'
+import { AuthModule } from '../src/modules/auth/auth.module'
+import { ConfigModule } from '@nestjs/config'
+import { Role } from '../src/modules/profile/constants/role'
+import * as bcrypt from 'bcrypt'
+import { genSalt } from 'bcrypt'
 
 describe('Profile E2E Testing', () => {
   let app: INestApplication
-  let repository: ProfileRepository
+  let profileRepository: ProfileRepository
+  let authToken: string
+  const adminUser: DeepPartial<Profile> = {
+    firstName: 'Ramón',
+    lastName: 'Voera',
+    email: 'ramoncito3312@gmail.com',
+    password: 'romn',
+    city: 'Brusque',
+    state: 'Rondônia',
+    zipcode: '20895',
+    address: '9068 Rua Primeiro de Maio ',
+    img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
+    roles: [Role.ADMIN],
+  }
 
   beforeAll(async () => {
     if (process.env.NODE_ENV !== 'testing') {
@@ -19,7 +39,9 @@ describe('Profile E2E Testing', () => {
     }
     const module = await Test.createTestingModule({
       imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
         ProfileModule,
+        AuthModule,
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: 'localhost',
@@ -28,21 +50,44 @@ describe('Profile E2E Testing', () => {
           password: 'developerpassword',
           database: 'dspot_e2e_test',
           entities: ['./**/*.entity.ts'],
-          synchronize: false,
+          synchronize: true,
           namingStrategy: new SnakeNamingStrategy(),
         }),
+      ],
+      providers: [
+        {
+          provide: APP_GUARD,
+          useClass: JwtGuard,
+        },
       ],
     }).compile()
     initializeTransactionalContext()
     app = module.createNestApplication()
     await app.init()
 
-    repository = module.get(ProfileRepository)
+    profileRepository = module.get(ProfileRepository)
+  })
+
+  beforeEach(async () => {
+    const { password, ...rest } = adminUser
+    const salt = await genSalt(10)
+    const hash = await bcrypt.hash(password, salt)
+    await profileRepository.save({ ...rest, password: hash })
+
+    const { body } = await request
+      .agent(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        username: 'ramoncito3312@gmail.com',
+        password: 'romn',
+      })
+    expect(body.access_token).toBeDefined()
+    authToken = body.access_token
   })
 
   afterEach(async () => {
-    return repository.manager.transaction(async (manager) => {
-      return Promise.all([
+    return profileRepository.manager.transaction(async (manager) => {
+      await Promise.all([
         manager.query('DELETE FROM profile WHERE TRUE'),
         manager.query('DELETE FROM profile_friends_profile WHERE TRUE'),
       ])
@@ -123,15 +168,17 @@ describe('Profile E2E Testing', () => {
           img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
         },
       ]
-      await repository.save(newUsers)
+      await profileRepository.save(newUsers)
+      const users = await profileRepository.find()
 
       const { body } = await request
         .agent(app.getHttpServer())
         .get('/profile')
+        .set('Authorization', `Bearer ${authToken}`)
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(200)
-      expect(body.length).toEqual(newUsers.length)
+      expect(body.length).toEqual(users.length)
     })
   })
   describe('GET /profile/distance', () => {
@@ -248,7 +295,7 @@ describe('Profile E2E Testing', () => {
           img: 'https://randomuser.me/api/portraits/thumb/men/36.jpg',
         },
       ]
-      const createdUsers = await repository.save(newUsers)
+      const createdUsers = await profileRepository.save(newUsers)
 
       createdUsers[0].Friends = [
         createdUsers[1],
@@ -266,11 +313,12 @@ describe('Profile E2E Testing', () => {
         createdUsers[2],
         createdUsers[3],
       ]
-      await repository.save(createdUsers)
+      await profileRepository.save(createdUsers)
 
       const req = await request
         .agent(app.getHttpServer())
         .get(`/profile/distance/${createdUsers[0].id}/${createdUsers[6].id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .set('Accept', 'application/json')
         .expect(200)
 

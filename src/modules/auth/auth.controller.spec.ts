@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { ProfileService } from '../profile/profile.service'
+import { JwtService } from '@nestjs/jwt'
 
 describe('AuthController', () => {
   let controller: AuthController
@@ -12,8 +13,11 @@ describe('AuthController', () => {
       providers: [AuthService],
     })
       .useMocker((token) => {
-        if (token === ProfileService) {
-          return {}
+        switch (token) {
+          case ProfileService:
+            return {}
+          case JwtService:
+            return {}
         }
       })
       .compile()

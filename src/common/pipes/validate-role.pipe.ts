@@ -20,7 +20,7 @@ export class ValidateRolePipe implements PipeTransform {
 
   async transform(value: UpdateProfileDto, metadata: ArgumentMetadata) {
     const user = await this.profileService.findOne(this.req.user.userId)
-    if (value?.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ADMIN)) {
+    if (value.roles?.includes(Role.ADMIN) && !user.roles.includes(Role.ADMIN)) {
       throw new ForbiddenException('This user is not allowed to create admins')
     }
     return value

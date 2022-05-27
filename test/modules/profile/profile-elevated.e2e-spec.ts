@@ -1,22 +1,22 @@
 import { INestApplication } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Test } from '@nestjs/testing'
-import { ProfileModule } from '../src/modules/profile/profile.module'
-import { ProfileRepository } from '../src/modules/profile/repos/profile.repository'
-import { Profile } from '../src/modules/profile/entities/profile.entity'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 import * as request from 'supertest'
 import { DeepPartial } from 'typeorm'
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked'
-import { JwtGuard } from '../src/modules/auth/guards/jwt.guard'
 import { APP_GUARD } from '@nestjs/core'
-import { AuthModule } from '../src/modules/auth/auth.module'
 import { ConfigModule } from '@nestjs/config'
-import { Role } from '../src/modules/profile/constants/role'
 import * as bcrypt from 'bcrypt'
 import { genSalt } from 'bcrypt'
+import { Role } from '../../../src/modules/profile/constants/role'
+import { JwtGuard } from '../../../src/modules/auth/guards/jwt.guard'
+import { ProfileModule } from '../../../src/modules/profile/profile.module'
+import { AuthModule } from '../../../src/modules/auth/auth.module'
+import { ProfileRepository } from '../../../src/modules/profile/repos/profile.repository'
+import { Profile } from '../../../src/modules/profile/entities/profile.entity'
 
-describe('Profile E2E Testing', () => {
+describe('Profile Module Elevated', () => {
   let app: INestApplication
   let profileRepository: ProfileRepository
   let authToken: string
@@ -328,6 +328,57 @@ describe('Profile E2E Testing', () => {
         createdUsers[5].id,
         createdUsers[6].id,
       ])
+    })
+  })
+  describe('POST /profile', () => {
+    it('should create a new profile', async () => {
+      const newProfile = {
+        firstName: 'Adelina',
+        lastName: 'Vieira',
+        email: 'adelina.vieira@example.com',
+        password: '252525',
+        city: 'Brusque',
+        state: 'Rondônia',
+        zipcode: '20895',
+        address: '9068 Rua Primeiro de Maio ',
+        img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
+      }
+
+      await request
+        .agent(app.getHttpServer())
+        .post('/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(newProfile)
+        .expect(201)
+
+      const { body } = await request
+        .agent(app.getHttpServer())
+        .get('/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+      expect(body.length).toBe(2)
+    })
+  })
+  describe('PATCH /profile', () => {
+    it('should update the admin profile', async function () {
+      const admin = await profileRepository.findOne({ email: adminUser.email })
+      const newEmail = 'lorain123@gmail.com'
+      await request
+        .agent(app.getHttpServer())
+        .patch(`/profile/${admin.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          email: newEmail,
+        })
+        .expect(200)
+
+      const { body } = await request
+        .agent(app.getHttpServer())
+        .get(`/profile/${admin.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+
+      expect(body.email).toBe(newEmail)
     })
   })
 })

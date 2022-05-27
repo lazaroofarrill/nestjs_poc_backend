@@ -19,28 +19,42 @@ import { GenericRequest } from '../../common/types/genericRequest'
 import { Role } from './constants/role'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { ValidateRolePipe } from '../../common/pipes/validate-role.pipe'
-import { Hash } from 'crypto'
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger'
+import { Profile } from './entities/profile.entity'
 
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Post()
+  @ApiBody({ type: CreateProfileDto })
+  @ApiOperation({
+    summary:
+      'Create a new profile in this endpoint. Only Admins are allowed here.',
+  })
+  @ApiBearerAuth()
   @UseGuards(new RolesGuard(Role.ADMIN))
   async create(
     @Body(ValidateRolePipe, HashPasswordPipe)
     createProfileDto: CreateProfileDto,
-  ) {
+  ): Promise<Profile> {
     return this.profileService.create(createProfileDto)
   }
 
   @Get()
+  @ApiOperation({ summary: 'List all profiles. Only Admins allowed here' })
   @UseGuards(new RolesGuard(Role.ADMIN))
-  findAll() {
+  findAll(): Promise<Profile[]> {
     return this.profileService.findAll()
   }
 
   @Get(':id')
+  @ApiOperation({ summary: "Get profile's info." })
   async findOne(@Param('id') id: string, @Req() req: GenericRequest) {
     if (
       req.user.roles.includes(Role.ADMIN) ||
@@ -52,9 +66,14 @@ export class ProfileController {
   }
 
   @Get(':id/friends')
+  @ApiOperation({
+    summary:
+      "List a profile's friend. Regular user's can get at most friends of friends.",
+  })
   async findAllFriends(@Param('id') id: string, @Req() req: GenericRequest) {
     if (
       req.user.roles.includes(Role.ADMIN) ||
+      id === req.user.userId ||
       (await this.profileService.getFriends(req.user.userId))
         .map((f) => f.id)
         .includes(id)
@@ -67,6 +86,9 @@ export class ProfileController {
     )
   }
 
+  @ApiOperation({
+    summary: 'Find friendship path between two users. Admins only.',
+  })
   @Get('distance/:start/:end')
   @UseGuards(new RolesGuard(Role.ADMIN))
   getPath(
@@ -77,6 +99,13 @@ export class ProfileController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: CreateProfileDto })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'User not logged in' })
+  @ApiResponse({
+    status: 403,
+    description: "User not authorized to edit this profile's information",
+  })
   update(
     @Param('id') id: string,
     @Body(ValidateRolePipe, HashPasswordPipe)
@@ -97,6 +126,7 @@ export class ProfileController {
     throw new ForbiddenException('You cannot delete this profile')
   }
 
+  @ApiOperation({ summary: 'Add friend to user.' })
   @Post(':id/friends/add/:newFriend')
   addFriend(
     @Param('id', ParseUUIDPipe) id: string,
@@ -110,6 +140,7 @@ export class ProfileController {
   }
 
   @Post('/friends/connect/:friend1/:friend2')
+  @ApiOperation({ summary: 'Connect two users. Admins only.' })
   @UseGuards(new RolesGuard(Role.ADMIN))
   addMutualFriendship(
     @Param('friend1', ParseUUIDPipe) friend1: string,

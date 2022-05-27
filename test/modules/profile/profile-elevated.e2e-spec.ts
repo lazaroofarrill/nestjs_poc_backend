@@ -5,16 +5,13 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 import * as request from 'supertest'
 import { DeepPartial } from 'typeorm'
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked'
-import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import * as bcrypt from 'bcrypt'
 import { genSalt } from 'bcrypt'
 import { Role } from '../../../src/modules/profile/constants/role'
-import { JwtGuard } from '../../../src/modules/auth/guards/jwt.guard'
-import { ProfileModule } from '../../../src/modules/profile/profile.module'
-import { AuthModule } from '../../../src/modules/auth/auth.module'
 import { ProfileRepository } from '../../../src/modules/profile/repos/profile.repository'
 import { Profile } from '../../../src/modules/profile/entities/profile.entity'
+import { ModulesModule } from '../../../src/modules/modules.module'
 
 describe('Profile Module Elevated', () => {
   let app: INestApplication
@@ -40,8 +37,7 @@ describe('Profile Module Elevated', () => {
     const module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
-        ProfileModule,
-        AuthModule,
+        ModulesModule,
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: 'localhost',
@@ -53,12 +49,6 @@ describe('Profile Module Elevated', () => {
           synchronize: true,
           namingStrategy: new SnakeNamingStrategy(),
         }),
-      ],
-      providers: [
-        {
-          provide: APP_GUARD,
-          useClass: JwtGuard,
-        },
       ],
     }).compile()
     initializeTransactionalContext()
@@ -179,10 +169,12 @@ describe('Profile Module Elevated', () => {
         .expect('Content-Type', /json/)
         .expect(200)
       expect(body.length).toEqual(users.length)
+      expect(body[0].password).toBeUndefined()
     })
   })
-  describe('GET /profile/distance', () => {
-    it('should create users and make relationships', async () => {
+  describe('Friends operations', () => {
+    let createdUsers: Profile[]
+    beforeEach(async () => {
       const newUsers = [
         {
           firstName: 'Adelina',
@@ -295,7 +287,7 @@ describe('Profile Module Elevated', () => {
           img: 'https://randomuser.me/api/portraits/thumb/men/36.jpg',
         },
       ]
-      const createdUsers = await profileRepository.save(newUsers)
+      createdUsers = await profileRepository.save(newUsers)
 
       createdUsers[0].Friends = [
         createdUsers[1],
@@ -314,7 +306,9 @@ describe('Profile Module Elevated', () => {
         createdUsers[3],
       ]
       await profileRepository.save(createdUsers)
+    })
 
+    it('should get path between two users', async () => {
       const req = await request
         .agent(app.getHttpServer())
         .get(`/profile/distance/${createdUsers[0].id}/${createdUsers[6].id}`)
@@ -328,6 +322,17 @@ describe('Profile Module Elevated', () => {
         createdUsers[5].id,
         createdUsers[6].id,
       ])
+    })
+
+    it("should get a user' friends", async () => {
+      const { body } = await request
+        .agent(app.getHttpServer())
+        .get(`/profile/${createdUsers[2].id}/friends`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+
+      expect(body.length).toBe(4)
+      expect(body[0].password).toBeUndefined()
     })
   })
   describe('POST /profile', () => {

@@ -1,7 +1,11 @@
-import { Module, ValidationPipe } from '@nestjs/common'
+import {
+  ClassSerializerInterceptor,
+  Module,
+  ValidationPipe,
+} from '@nestjs/common'
 import { ProfileModule } from './profile/profile.module'
 import { AuthModule } from './auth/auth.module'
-import { APP_GUARD, APP_PIPE } from '@nestjs/core'
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { JwtGuard } from './auth/guards/jwt.guard'
 
 @Module({
@@ -19,6 +23,10 @@ import { JwtGuard } from './auth/guards/jwt.guard'
     {
       provide: APP_GUARD,
       useClass: JwtGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
     },
   ],
 })

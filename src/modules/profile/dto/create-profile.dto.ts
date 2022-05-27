@@ -9,9 +9,12 @@ import {
   IsString,
 } from 'class-validator'
 import { Role } from '../constants/role'
+import { ApiProperty } from '@nestjs/swagger'
+import { RelationDto } from '../../../common/dtos/relation-dto'
 
 export class CreateProfileDto implements DeepPartial<Profile> {
   @IsString()
+  @ApiProperty()
   email: string
 
   @IsString()
@@ -28,7 +31,7 @@ export class CreateProfileDto implements DeepPartial<Profile> {
 
   @IsPhoneNumber()
   @IsOptional()
-  phone: string
+  phone?: string
 
   @IsString()
   address: string
@@ -44,12 +47,17 @@ export class CreateProfileDto implements DeepPartial<Profile> {
 
   @IsBoolean()
   @IsOptional()
-  available: boolean
+  available?: boolean
 
   @IsEnum(Role, { each: true })
   @IsOptional()
-  roles: Role[]
+  roles?: Role[]
 
   @Allow()
-  Friends: DeepPartial<Profile>[]
+  @ApiProperty({
+    type: RelationDto,
+    isArray: true,
+    description: "This user's friend list",
+  })
+  Friends?: DeepPartial<Profile>[]
 }

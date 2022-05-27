@@ -172,6 +172,88 @@ describe('Profile Module Elevated', () => {
       expect(body[0].password).toBeUndefined()
     })
   })
+  describe('POST /profile', () => {
+    it('should create a new profile', async () => {
+      const newProfile = {
+        firstName: 'Adelina',
+        lastName: 'Vieira',
+        email: 'adelina.vieira@example.com',
+        password: '252525',
+        city: 'Brusque',
+        state: 'Rondônia',
+        zipcode: '20895',
+        address: '9068 Rua Primeiro de Maio ',
+        img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
+      }
+
+      await request
+        .agent(app.getHttpServer())
+        .post('/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(newProfile)
+        .expect(201)
+
+      const { body } = await request
+        .agent(app.getHttpServer())
+        .get('/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+      expect(body.length).toBe(2)
+    })
+  })
+  describe('PATCH /profile', () => {
+    it('should update the admin profile', async function () {
+      const admin = await profileRepository.findOne({ email: adminUser.email })
+      const newEmail = 'lorain123@gmail.com'
+      await request
+        .agent(app.getHttpServer())
+        .patch(`/profile/${admin.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          email: newEmail,
+        })
+        .expect(200)
+
+      const { body } = await request
+        .agent(app.getHttpServer())
+        .get(`/profile/${admin.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+
+      expect(body.email).toBe(newEmail)
+    })
+  })
+  describe('DELETE /profile', () => {
+    it('should delete a profile', async function () {
+      const newProfile = {
+        firstName: 'Adelina',
+        lastName: 'Vieira',
+        email: 'adelina.vieira@example.com',
+        password: '252525',
+        city: 'Brusque',
+        state: 'Rondônia',
+        zipcode: '20895',
+        address: '9068 Rua Primeiro de Maio ',
+        img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
+      }
+      const createdProfile = await profileRepository.save(newProfile)
+      await request
+        .agent(app.getHttpServer())
+        .get(`/profile/${createdProfile.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+      await request
+        .agent(app.getHttpServer())
+        .delete(`/profile/${createdProfile.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+      await request
+        .agent(app.getHttpServer())
+        .get(`/profile/${createdProfile.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404)
+    })
+  })
   describe('Friends operations', () => {
     let createdUsers: Profile[]
     beforeEach(async () => {
@@ -334,56 +416,52 @@ describe('Profile Module Elevated', () => {
       expect(body.length).toBe(4)
       expect(body[0].password).toBeUndefined()
     })
-  })
-  describe('POST /profile', () => {
-    it('should create a new profile', async () => {
-      const newProfile = {
-        firstName: 'Adelina',
-        lastName: 'Vieira',
-        email: 'adelina.vieira@example.com',
-        password: '252525',
-        city: 'Brusque',
-        state: 'Rondônia',
-        zipcode: '20895',
-        address: '9068 Rua Primeiro de Maio ',
-        img: 'https://randomuser.me/api/portraits/thumb/women/5.jpg',
-      }
 
+    it('should add friends to users', async () => {
       await request
         .agent(app.getHttpServer())
-        .post('/profile')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(newProfile)
-        .expect(201)
-
-      const { body } = await request
-        .agent(app.getHttpServer())
-        .get('/profile')
+        .get(`/profile/${createdUsers[1].id}/friends/add/${createdUsers[6].id}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
-      expect(body.length).toBe(2)
-    })
-  })
-  describe('PATCH /profile', () => {
-    it('should update the admin profile', async function () {
-      const admin = await profileRepository.findOne({ email: adminUser.email })
-      const newEmail = 'lorain123@gmail.com'
-      await request
-        .agent(app.getHttpServer())
-        .patch(`/profile/${admin.id}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          email: newEmail,
+
+      const createdFriend = await profileRepository
+        .createQueryBuilder('c')
+        .innerJoin('c.Friends', 'f', 'f.id = :fId', {
+          fId: createdUsers[6].id,
         })
-        .expect(200)
+        .where('c.id = :pId', { pId: createdUsers[1].id })
+        .getOne()
 
-      const { body } = await request
+      expect(createdFriend).toBeDefined()
+    })
+
+    it('should connect two friends', async function () {
+      await request
         .agent(app.getHttpServer())
-        .get(`/profile/${admin.id}`)
+        .get(
+          `/profile/friends/connect/${createdUsers[1].id}/${createdUsers[6].id}`,
+        )
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
 
-      expect(body.email).toBe(newEmail)
+      const createdFriend = profileRepository
+        .createQueryBuilder('c')
+        .innerJoin('c.Friends', 'f', 'f.id = :fId', {
+          fId: createdUsers[6].id,
+        })
+        .where('c.id = :pId', { pId: createdUsers[1].id })
+        .getOne()
+
+      expect(createdFriend).toBeDefined()
+      const createdFriendr = profileRepository
+        .createQueryBuilder('c')
+        .innerJoin('c.Friends', 'f', 'f.id = :fId', {
+          fId: createdUsers[1].id,
+        })
+        .where('c.id = :pId', { pId: createdUsers[6].id })
+        .getOne()
+
+      expect(createdFriendr).toBeDefined()
     })
   })
 })

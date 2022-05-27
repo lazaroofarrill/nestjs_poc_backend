@@ -129,7 +129,7 @@ export class ProfileController {
   }
 
   @ApiOperation({ summary: 'Add friend to user.' })
-  @Post(':id/friends/add/:newFriend')
+  @Get(':id/friends/add/:newFriend')
   addFriend(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('newFriend') newFriend: string,
@@ -141,7 +141,7 @@ export class ProfileController {
     throw new ForbiddenException("You can't add friends to other profiles")
   }
 
-  @Post('/friends/connect/:friend1/:friend2')
+  @Get('/friends/connect/:friend1/:friend2')
   @ApiOperation({ summary: 'Connect two users. Admins only.' })
   @UseGuards(new RolesGuard(Role.ADMIN))
   addMutualFriendship(
